@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+.venv/
+.eggs/
+*.egg-info/
+.coverage
+htmlcov/
+.pytest_cache/
+.DS_Store
+*.swp
+*.bak
+*.log
+.idea/
+.vscode/
+
+# JSBSim data is bundled in but contains many files; ignore intermediate
+# build outputs in case someone clones the full repo.
+jsbsim_data/build/
+jsbsim_data/.vscode/
+
+# Local env
+.env
+.env.local

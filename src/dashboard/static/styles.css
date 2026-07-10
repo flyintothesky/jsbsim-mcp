@@ -1,0 +1,156 @@
+:root {
+  --bg: #0b0e14;
+  --panel: #131820;
+  --panel-2: #1c222b;
+  --fg: #d8dee9;
+  --muted: #7e8590;
+  --accent: #5ec4ff;
+  --good: #86dc7d;
+  --warn: #ffc56b;
+  --bad: #ff6e6e;
+  --border: #232a35;
+  --shadow: 0 1px 0 #0003, 0 6px 20px #0006;
+  --mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+}
+
+.hdr {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 5;
+}
+.hdr__left { display: flex; gap: 8px; align-items: center; }
+.hdr__right code { font-family: var(--mono); }
+.pill {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+.pill--online { color: var(--good); border-color: var(--good); }
+.pill--offline { color: var(--muted); }
+.pill--err { color: var(--bad); border-color: var(--bad); }
+
+.control-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  padding: 14px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.ctl { display: flex; flex-direction: column; gap: 4px; }
+.ctl label { color: var(--muted); font-size: 12px; }
+.ctl input, .ctl select {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font: inherit;
+}
+.ctl--actions { margin-left: auto; flex-direction: row; gap: 8px; }
+.btn {
+  background: var(--panel-2);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.btn:hover { background: #232a36; }
+.btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+.btn.primary { border-color: var(--accent); color: var(--accent); }
+.btn.danger  { border-color: var(--bad);  color: var(--bad); }
+.btn.small  { padding: 4px 10px; font-size: 12px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 14px;
+}
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card__title {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 1px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.muted { color: var(--muted); font-weight: normal; text-transform: none; }
+
+.pfd-card { grid-column: 1 / 2; }
+.pfd-card svg { width: 100%; height: 360px; display: block; background: #000; }
+.attitude-card { grid-column: 2 / 3; }
+.attitude-card canvas { width: 100%; height: 360px; display: block; background: #000; }
+.stats-card { grid-column: 1 / 2; }
+.chart-card { grid-column: 2 / 3; }
+.log-card { grid-column: 1 / 2; }
+.mcp-card  { grid-column: 2 / 3; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+}
+.stats-grid > div { background: var(--panel); padding: 8px 10px; }
+.stats-grid .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+.stats-grid .v { font-family: var(--mono); font-size: 14px; margin-top: 2px; }
+
+.log {
+  margin: 0;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--fg);
+  max-height: 220px;
+  overflow: auto;
+  background: var(--panel-2);
+}
+.mcp-card textarea {
+  width: calc(100% - 24px);
+  margin: 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px;
+  border-radius: 6px;
+  resize: vertical;
+}
+.mcp-card .btn.small { margin: 0 12px; }
+.mcp-card .log { margin: 12px; }
+
+@media (max-width: 1000px) {
+  .grid { grid-template-columns: 1fr; }
+  .pfd-card, .attitude-card, .stats-card, .chart-card, .log-card, .mcp-card {
+    grid-column: 1 / -1;
+  }
+}

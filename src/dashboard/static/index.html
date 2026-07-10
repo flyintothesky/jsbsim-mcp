@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>jsbsim-mcp · Flight Dynamics Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="hdr">
+    <div class="hdr__left">
+      <strong>jsbsim-mcp</strong>
+      <span class="pill" id="version">v0.1.0</span>
+      <span class="pill pill--offline" id="connState">disconnected</span>
+    </div>
+    <div class="hdr__right">
+      <code id="sessionIdDisplay">no session</code>
+    </div>
+  </header>
+
+  <section class="control-bar">
+    <div class="ctl">
+      <label>Aircraft</label>
+      <select id="aircraftSel"></select>
+    </div>
+    <div class="ctl">
+      <label>Altitude (ft)</label>
+      <input id="icAlt" type="number" value="3000" step="100" />
+    </div>
+    <div class="ctl">
+      <label>Airspeed (kt)</label>
+      <input id="icAirspeed" type="number" value="95" step="5" />
+    </div>
+    <div class="ctl">
+      <label>Heading (°)</label>
+      <input id="icHeading" type="number" value="0" step="5" />
+    </div>
+    <div class="ctl">
+      <label>Step (s)</label>
+      <input id="stepSeconds" type="number" value="0.5" step="0.05" min="0.0167" />
+    </div>
+    <div class="ctl ctl--actions">
+      <button id="btnCreate" class="btn primary">Create session</button>
+      <button id="btnStep" class="btn" disabled>Step</button>
+      <button id="btnTrim" class="btn" disabled>Trim</button>
+      <button id="btnClose" class="btn danger" disabled>Close</button>
+    </div>
+  </section>
+
+  <section class="grid">
+    <!-- PFD -->
+    <div class="card pfd-card">
+      <div class="card__title">Primary Flight Display</div>
+      <svg id="pfd" viewBox="0 0 600 360" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <!-- 3D attitude -->
+    <div class="card attitude-card">
+      <div class="card__title">Attitude (3D)</div>
+      <canvas id="attitude3d" width="320" height="320"></canvas>
+    </div>
+
+    <!-- Stats -->
+    <div class="card stats-card">
+      <div class="card__title">Telemetry</div>
+      <div id="stats" class="stats-grid"></div>
+    </div>
+
+    <!-- Time series -->
+    <div class="card chart-card">
+      <div class="card__title">Time series (last 60 s)</div>
+      <div id="chart"></div>
+    </div>
+
+    <!-- Stream log -->
+    <div class="card log-card">
+      <div class="card__title">Event log</div>
+      <pre id="log" class="log"></pre>
+    </div>
+
+    <!-- MCP console -->
+    <div class="card mcp-card">
+      <div class="card__title">
+        MCP JSON-RPC console
+        <span class="muted">(direct REST mirror)</span>
+      </div>
+      <textarea id="mcpIn" rows="4" spellcheck="false"></textarea>
+      <button id="mcpSend" class="btn small">Send</button>
+      <pre id="mcpOut" class="log"></pre>
+    </div>
+  </section>
+
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+  <script src="/static/three.min.js"></script>
+  <script src="/static/dashboard.js"></script>
+</body>
+</html>
