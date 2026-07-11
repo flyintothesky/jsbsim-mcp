@@ -60,7 +60,6 @@ class Dispatcher:
 
     async def __call__(self, scope, receive, send):
         if scope["type"] == "lifespan":
-            # Route lifespan to parent's lifespan manager only.
             while True:
                 msg = await receive()
                 if msg["type"] == "lifespan.startup":
@@ -74,10 +73,6 @@ class Dispatcher:
         if path == "/mcp" or path.startswith("/mcp/"):
             await self.mcp_app(scope, receive, send)
         else:
-            # Send a debug log for non-MCP requests — surfaces dispatcher issues.
-            import sys
-            print(f"[dispatcher] type={scope.get('type')!r} path={path}",
-                  file=sys.stderr, flush=True)
             await self.dashboard_app(scope, receive, send)
 
 

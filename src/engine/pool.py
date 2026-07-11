@@ -164,3 +164,43 @@ def default_root() -> Path:
             return candidate
         here = here.parent
     return Path(".")
+
+
+# ----------------------------------------------------------------------
+# Singleton: BOTH the MCP server and the dashboard app must reference
+# the SAME pool instance, otherwise sessions created over MCP are not
+# visible to the dashboard's REST endpoints (or vice versa).
+# ----------------------------------------------------------------------
+_SHARED_POOL: SessionPool | None = None
+_SHARED_LOCK = None
+
+
+def _lock():
+    global _SHARED_LOCK
+    if _SHARED_LOCK is None:
+        import threading as _t
+        _SHARED_LOCK = _t.Lock()
+    return _SHARED_LOCK
+
+
+def shared_pool() -> SessionPool:
+    """Return the process-wide singleton SessionPool.
+
+    Created lazily on first call. Backed by a thread-safe lazy init so
+    that multiple modules (MCP server, dashboard) get the same instance.
+    """
+    global _SHARED_POOL
+    if _SHARED_POOL is not None:
+        return _SHARED_POOL
+    with _lock():
+        if _SHARED_POOL is None:
+            _SHARED_POOL = SessionPool(root=default_root())
+            _SHARED_POOL.start()
+        return _SHARED_POOL
+
+
+def reset_shared_pool() -> None:
+    """Tests only. Resets the singleton so a new pool can be created."""
+    global _SHARED_POOL
+    with _lock():
+        _SHARED_POOL = None

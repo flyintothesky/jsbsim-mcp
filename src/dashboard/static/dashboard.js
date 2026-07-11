@@ -173,7 +173,8 @@
   async function closeSession() {
     if (!state.sid) return;
     try {
-      if (state.ws) state.ws.close();
+      if (state.ws) { state.ws.close(); state.ws = null; }
+      if (state.pollingTimer) { clearInterval(state.pollingTimer); state.pollingTimer = null; }
       await fetch(api.close(state.sid), { method: 'DELETE' });
       log('closed session ' + state.sid);
     } catch (e) {
@@ -193,12 +194,33 @@
   // ----------------------------------------------------------------------
   function openWs() {
     if (state.ws) try { state.ws.close(); } catch {}
+    if (state.pollingTimer) { clearInterval(state.pollingTimer); state.pollingTimer = null; }
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     const ws = new WebSocket(`${proto}://${location.host}/ws/${state.sid}`);
     state.ws = ws;
-    ws.onopen  = () => { setConn('live');   log('ws open');  };
-    ws.onerror = () => { setConn('error');  log('ws error', 'err'); };
-    ws.onclose = () => { setConn('closed'); log('ws closed'); };
+
+    // Track successful open so we can fall back to REST polling if WS
+    // never connects (uploads / reverse proxies / firewalls often block WS).
+    let wsOK = false;
+    let wsWatchdog = setTimeout(() => {
+      if (!wsOK) startPollingFallback();
+    }, 2000);
+
+    ws.onopen  = () => {
+      wsOK = true;
+      clearTimeout(wsWatchdog);
+      setConn('live'); log('ws open');
+    };
+    ws.onerror = () => {
+      clearTimeout(wsWatchdog);
+      setConn('error'); log('ws error — will poll REST', 'err');
+      startPollingFallback();
+    };
+    ws.onclose = () => {
+      clearTimeout(wsWatchdog);
+      setConn('closed'); log('ws closed — will poll REST', 'err');
+      startPollingFallback();
+    };
     ws.onmessage = (ev) => {
       try {
         const m = JSON.parse(ev.data);
@@ -207,6 +229,25 @@
         log('bad frame: ' + e.message, 'err');
       }
     };
+  }
+
+  // Fallback: if WebSocket fails to handshake, poll the REST telemetry
+  // endpoint at 5 Hz. PFD, 3D, stats, charts all keep working.
+  function startPollingFallback() {
+    if (state.pollingTimer) return;
+    if (!state.sid) return;
+    log('polling /api/sessions/' + state.sid + '/telemetry @ 5 Hz', 'warn');
+    state.pollingTimer = setInterval(async () => {
+      if (!state.sid) return;
+      try {
+        const r = await fetch(api.telemetry(state.sid));
+        if (!r.ok) return;
+        const frame = await r.json();
+        apply(frame);
+      } catch (e) {
+        // network issue; keep trying
+      }
+    }, 200);
   }
 
   // ----------------------------------------------------------------------

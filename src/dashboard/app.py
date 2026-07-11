@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from ..engine import SessionPool, default_root, list_aircraft, TelemetryFrame
+from ..engine import SessionPool, default_root, list_aircraft, TelemetryFrame, shared_pool
 
 
 # ----------------------------------------------------------------------
@@ -31,11 +31,8 @@ POOL: SessionPool | None = None
 
 
 def _get_pool() -> SessionPool:
-    global POOL
-    if POOL is None:
-        POOL = SessionPool(root=default_root())
-        POOL.start()
-    return POOL
+    """Return the singleton SessionPool shared with the MCP server."""
+    return shared_pool()
 
 
 @asynccontextmanager

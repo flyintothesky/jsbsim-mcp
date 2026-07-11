@@ -50,16 +50,9 @@ POOL: SessionPool | None = None
 
 
 def get_pool() -> SessionPool:
-    global POOL
-    if POOL is None:
-        root = default_root()
-        POOL = SessionPool(
-            root=root,
-            max_sessions=int(os.environ.get("JBM_MAX_SESSIONS", "32")),
-            idle_ttl_sec=int(os.environ.get("JBM_IDLE_TTL", "300")),
-        )
-        POOL.start()
-    return POOL
+    """Return the singleton SessionPool shared with the dashboard."""
+    from ..engine.pool import shared_pool
+    return shared_pool()
 
 
 # ----------------------------------------------------------------------
