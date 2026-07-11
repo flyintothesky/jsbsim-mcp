@@ -74,6 +74,10 @@ class Dispatcher:
         if path == "/mcp" or path.startswith("/mcp/"):
             await self.mcp_app(scope, receive, send)
         else:
+            # Send a debug log for non-MCP requests — surfaces dispatcher issues.
+            import sys
+            print(f"[dispatcher] type={scope.get('type')!r} path={path}",
+                  file=sys.stderr, flush=True)
             await self.dashboard_app(scope, receive, send)
 
 

@@ -19,6 +19,7 @@ from typing import Any, AsyncIterator
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from ..engine import SessionPool, default_root, list_aircraft, TelemetryFrame
 
@@ -67,6 +68,11 @@ app.add_middleware(
 
 
 STATIC_DIR = Path(__file__).parent / "static"
+
+# Serve static assets (dashboard.js, styles.css, three.module.min.js).
+# Without this, the dashboard's <script src="/static/dashboard.js"> 404s
+# and the page falls back to "disconnected / no session".
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 # ----------------------------------------------------------------------
@@ -230,7 +236,16 @@ async def ws_telemetry(ws: WebSocket, sid: str) -> None:
     if pool.get(sid) is None:
         await ws.close(code=4404)
         return
-    await broadcaster.subscribe(sid, ws)
+    try:
+        await ws.accept()
+        await broadcaster.subscribe(sid, ws)
+    except Exception as exc:
+        import sys, traceback
+        traceback.print_exc(file=sys.stderr)
+        try:
+            await ws.close(code=1011)
+        except Exception:
+            pass
 
 
 # ----------------------------------------------------------------------
