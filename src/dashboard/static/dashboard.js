@@ -407,6 +407,7 @@
   // 3D attitude (Three.js, ES module)
   // ----------------------------------------------------------------------
   let THREE_M, scene, camera, renderer, planeMesh, horizon;
+  let idleAnimT0 = 0;        // when no session / no telemetry, gentle idle motion
 
   async function bootThree() {
     // Try multiple CDN origins, fall back to local vendored copy.
@@ -469,22 +470,40 @@
     grid.rotation.x = Math.PI / 2;
     scene.add(grid);
 
+    idleAnimT0 = performance.now();
     animate3d();
     log('three.js loaded', 'info');
   }
 
   function drawAttitude3d(f) {
     if (!planeMesh || !renderer) return;
-    planeMesh.rotation.z = f.roll_deg * Math.PI / 180;
-    planeMesh.rotation.x = f.pitch_deg * Math.PI / 180;
-    horizon.rotation.z   = -f.roll_deg * Math.PI / 180;
-    horizon.position.y   = -0.5 - (f.pitch_deg / 30.0);
+    // When f is undefined or all-zero, run a gentle idle "demo" so the
+    // user immediately sees that the 3D panel works (and so the canvas
+    // does not look frozen before they create a session).
+    if (!f || (f.pitch_deg === 0 && f.roll_deg === 0 && !state.sid)) {
+      const t = (performance.now() - idleAnimT0) / 1000.0;
+      const pitchIdle = Math.sin(t * 0.8) * 6.0;
+      const rollIdle  = Math.sin(t * 0.5) * 12.0;
+      planeMesh.rotation.z = rollIdle * Math.PI / 180;
+      planeMesh.rotation.x = pitchIdle * Math.PI / 180;
+      horizon.rotation.z   = -rollIdle * Math.PI / 180;
+      horizon.position.y   = -0.5 - (pitchIdle / 30.0);
+    } else {
+      planeMesh.rotation.z = f.roll_deg * Math.PI / 180;
+      planeMesh.rotation.x = f.pitch_deg * Math.PI / 180;
+      horizon.rotation.z   = -f.roll_deg * Math.PI / 180;
+      horizon.position.y   = -0.5 - (f.pitch_deg / 30.0);
+    }
     renderer.render(scene, camera);
   }
 
   function animate3d() {
     requestAnimationFrame(animate3d);
-    if (renderer && scene && camera) renderer.render(scene, camera);
+    if (!renderer) return;
+    // If we have no live telemetry yet, use the idle demo.
+    if (!state.lastSimT || state.lastSimT < 0) {
+      drawAttitude3d(null);
+    }
   }
 
   // ----------------------------------------------------------------------
