@@ -8,147 +8,144 @@ app_port: 7860
 app_file: app.py
 pinned: false
 license: apache-2.0
-short_description: JSBSim flight-dynamics engine as an MCP service
+short_description: JSBSim flight-dynamics engine as a self-hosted MCP service
 ---
 
-# jsbsim-mcp
+# jsbsim-mcp — Self-Hosted MCP Service
 
-> **JSBSim as a hosted MCP service. Drive any aircraft in any AI agent.**
+> **JSBSim flight dynamics, exposed as an MCP service you run locally.**
+> Bring your own compute — `pip install` or `docker run`, plug into any MCP-aware agent.
 
-[JSBSim](https://github.com/JSBSim-Team/jsbsim) is the open-source
-flight-dynamics engine powering FlightGear, Unreal Engine, ArduPilot, NASA
-research and DARPA's AI dogfight competition. **jsbsim-mcp** exposes the
-same engine through the **Model Context Protocol (MCP)**, so Claude,
-Cursor, Codex or any MCP-aware agent can fly aircraft in plain English.
+This is the **Self-Hosted distribution** of jsbsim-mcp.
+It is **not** a hosted endpoint — you deploy it locally and bind it as an
+MCP stdio server to Claude Desktop / Claude Code / Cursor / Codex.
 
-Built on this Space:
-
-- 1 unified ASGI app: **MCP JSON-RPC at `/mcp`** + **Web Dashboard at `/`**
-- 60Hz real-time simulation engine (`python -m jsbsim`)
-- 60+ bundled aircraft (`c172x`, `A320`, `f-16`, `737`, `Concorde`, `X15`, ...)
-- WebSocket telemetry to the browser
-- Apache-2.0 source code; JSBSim dependency is LGPL-2.1 (C-ABI isolated)
+For the deployed hosted version, see the HF Space mirror (separate project).
 
 ---
 
-## Quick Start
+## 1. Install
 
-### 1. Install locally (stdio mode)
+### Option A — pip (recommended for Claude Desktop / Cursor / Codex)
 
 ```bash
-git clone https://github.com/<you>/jsbsim-mcp
+pip install -e .
+# or:
+# pip install git+https://github.com/flyintothesky/jsbsim-mcp.git
+```
+
+Requires Python ≥ 3.10 and `jsbsim == 1.3.1`.
+
+### Option B — Docker (recommended for sandboxing)
+
+```bash
+docker build -t jsbsim-mcp .
+docker run --rm -it jsbsim-mcp stdio
+```
+
+### Option C — From this repo
+
+```bash
+git clone https://github.com/flyintothesky/jsbsim-mcp
 cd jsbsim-mcp
-python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-# Bundle JSBSim aircraft data (≈30 MB)
-make data           # OR:  mkdir jsbsim_data && cd jsbsim_data && \
-                    #       curl -L https://github.com/JSBSim-Team/jsbsim/archive/refs/heads/master.tar.gz | tar --strip-components=1 -xz
-
-python app.py       # → http://0.0.0.0:7860 (dashboard) / http://0.0.0.0:7860/mcp (MCP)
-```
-
-### 2. Connect a remote agent (Claude Desktop / Cursor)
-
-```json
-{
-  "mcpServers": {
-    "jsbsim-fdm": {
-      "url": "https://<your-hf-space>.hf.space/mcp"
-    }
-  }
-}
-```
-
-Claude will then list 10 tools (see [docs/API.md](docs/API.md)) and 7
-resources (incl. full telemetry history).
-
-### 3. Local stdio (Claude Code / Cursor local)
-
-```bash
+python -m scripts.slim_data    # optional, ~24 MB → saves MB
 python run_stdio.py
 ```
 
-In `claude_desktop_config.json`:
+## 2. Wire into Claude Desktop / Cursor / Codex
+
+`claude_desktop_config.json` (or its equivalent for your client):
+
 ```json
 {
   "mcpServers": {
     "jsbsim-fdm-local": {
       "command": "python",
-      "args": ["/path/to/jsbsim-mcp/run_stdio.py"]
+      "args": ["/abs/path/to/jsbsim-mcp/run_stdio.py"]
     }
   }
 }
 ```
 
----
-
-## HTTP endpoints
-
-| Path | Description |
-|---|---|
-| `/`         | Web Dashboard (PFD, 3D attitude, time-series charts) |
-| `/api/aircraft` | List bundled aircraft |
-| `/api/sessions` | POST create / GET list / DELETE close |
-| `/api/sessions/{sid}/step` | Advance simulation N seconds |
-| `/api/sessions/{sid}/telemetry` | Latest telemetry frame |
-| `/ws/{sid}` | WebSocket telemetry stream (~20 Hz) |
-| `/mcp`      | MCP JSON-RPC 2.0 streamable_http endpoint |
-| `/healthz`  | Health probe |
-
-## MCP tools (10)
+Restart Claude. Tools list appears:
 
 ```
-list_aircraft           create_session         close_session
-set_initial_conditions  trim                   step
-get_property            set_property           get_telemetry
+list_aircraft        create_session      close_session
+set_initial_conditions    trim           step
+get_property        set_property        get_telemetry
 execute_script
 ```
 
-## MCP resources (7)
+## 3. (Optional) Run the bundled web dashboard
 
-```
-jsbsim://aircraft
-jsbsim://aircraft/{name}
-jsbsim://engines
-jsbsim://sessions
-jsbsim://sessions/{sid}/telemetry
+Want a browser UI for the simulation? Run the same code as an HTTP server:
+
+```bash
+python app.py      # → http://localhost:7860/
 ```
 
-## MCP prompts (2)
+- Live PFD
+- 3D attitude indicator
+- Time-series charts (altitude / speed / alpha / thrust)
+- WebSocket telemetry at ~20 Hz
+- Browser-side MCP JSON-RPC console
 
+Works inside Docker as well:
+
+```bash
+docker run --rm -p 7860:7860 jsbsim-mcp
+# then visit http://localhost:7860/
 ```
-cruise_c172      Standard C172 cruise workflow
-stall_recovery   Stall entry / recovery exercise
-```
 
----
+## 4. Tool reference (10 tools)
 
-## Architecture
+| Tool | Summary |
+|---|---|
+| `list_aircraft` | List 60+ bundled aircraft names |
+| `create_session` | Spin up a session, return `session_id` |
+| `close_session` | Tear it down |
+| `set_initial_conditions` | Apply altitude / airspeed / heading etc. |
+| `trim` | Iteratively balances elevator for level flight |
+| `step` | Advance N simulated seconds |
+| `get_property` | Read any JSBSim property by path |
+| `set_property` | Write any JSBSim property |
+| `get_telemetry` | One-shot 40+ scalar frame |
+| `execute_script` | Load a `<run>` JSBSim script |
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The system is layered:
+Full schema: `docs/API.md`.
+
+## 5. Architecture
 
 ```
 src/engine/    JSBSim wrapper + session pool + telemetry
-src/server/    MCP protocol adapters (FastMCP tools/resources/prompts)
+src/server/    MCP protocol adapter (FastMCP, stdio + HTTP)
 src/dashboard/ FastAPI dashboard + WebSocket broadcaster
-app.py         ASGI dispatcher
+app.py         Combined ASGI dispatcher (HTTP + WS + MCP)
+run_stdio.py   Stdio entry for local Claude clients
 ```
 
-License boundary: JSBSim 1.3.1 is LGPL-2.1 and is loaded as a wheel
-(`pip install jsbsim`). All new code in this project is Apache-2.0.
+LGPL-2.1 boundary preserved (JSBSim is dynamically linked). See
+`THIRD_PARTY_NOTICES.md`.
 
 ---
 
-## Demo
+## Why Self-Hosted?
 
-```bash
-curl -X POST https://<space>.hf.space/mcp \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json, text/event-stream' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"demo","version":"1"}}}'
-```
+JSBSim's open-source license permits redistribution, but the model
+files (60 aircraft, ~30 MB) and C++ simulator itself are heavy. The
+practical way to consume this in agents is:
 
-Then list tools, call `create_session`, etc.
+1. `pip install` once.
+2. Run **per-developer** as an MCP server via stdio.
+3. Optionally start the dashboard for human-in-the-loop.
+
+This avoids round-tripping 60 aircraft over a public MCP endpoint and
+keeps your proprietary IC files local.
+
+If you want a centrally hosted version for a team, see the
+self-hosted Docker recipe in `docs/DEPLOY_MODELSCOPE.md` — point your
+own HF Space / Render / Fly.io at the same source.
 
 ---
 
@@ -157,12 +154,4 @@ Then list tools, call `create_session`, etc.
 - This project: **Apache-2.0**
 - JSBSim dependency: **LGPL-2.1**
 
-See `THIRD_PARTY_NOTICES.md`.
-
----
-
-## Credits
-
-- JSBSim-Team for 25 years of open-source flight-dynamics
-- Anthropic MCP for the protocol standard
-- Hugging Face for Spaces hosting
+See `LICENSE` and `THIRD_PARTY_NOTICES.md`.
