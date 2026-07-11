@@ -59,10 +59,17 @@
   };
 
   const setConn = (s) => {
+    // Once polling fallback is running, promote the displayed label
+    // to "polling" so transient WS error/close events don't paint over
+    // the fact that we're still receiving frames via REST.
+    if (state.pollingTimer && s !== 'live' && s !== 'ready') {
+      s = 'polling';
+    }
     ui.connState.textContent = s;
     ui.connState.className = 'pill ' + (
-      s === 'live'   ? 'pill--online' :
-      s === 'error'  ? 'pill--err' :
+      s === 'live'    ? 'pill--online' :
+      s === 'polling' ? 'pill--online' :     // treat polling as live
+      s === 'error'   ? 'pill--err'   :
       'pill--offline'
     );
   };
