@@ -267,4 +267,35 @@ class TelemetryFrame(BaseModel):
 - **统计 + 计费**(Phase 3):每个 tool call 记账, 量化 token 计费
 - **License 双声明**:`THIRD_PARTY_NOTICES.md` 详细列出 JSBSim LGPL-2.1 自新代码 Apache-2.0
 
+---
+
+## 9. 关联项目 · OpenAP(可选,互补,未集成)
+
+`jsbsim-mcp` 默认做**高保真 6-DoF 仿真**(JSBSim v1.3.1 + 60 架飞机 XML)。
+
+如果你的用例更偏宏观/规划/排放,推荐 **OpenAP** (TU Delft CNS/ATM Group):
+- 仓库: <https://github.com/TUDelft-CNS-ATM/openap>
+- 文档: <https://openap.dev/>
+- License: LGPL-3.0
+- 安装: `pip install openap` (可选 `[casadi]` / `[jax]` backend)
+
+OpenAP 提供的、jsbsim-mcp 不提供的:
+
+| 能力 | OpenAP | jsbsim-mcp |
+|---|:---:|:---:|
+| BADA 顶层轨迹生成(departure → climb → cruise → descent → approach)| ✅ | ❌ |
+| 全机队快速批量仿真(几千架/秒)| ✅ | ❌ |
+| ICAO 排放估算(NOx, CO, CO2, HC, H2O)| ✅ | ❌ |
+| 航路导航点 + ICAO 机场数据库 | ✅ | ❌ |
+| WAKE 类别分类(L/H/M/J)| ✅ | ❌ |
+| 6-DoF 实时积分 | ❌ | ✅ |
+| 失速 / 反尾旋 / 真实飞行员模型 | ❌ | ✅ |
+| 60 架飞机 XML XML 高保真表 | ❌ | ✅ |
+| MCP 协议服务器 | ❌ | ✅ |
+
+**集成路径**(未来可选,非本期目标):
+1. **作为 MCP 新工具**:`plan_trajectory(aircraft, origin, dest, alt)` 一次性生成 4D 轨迹 + 排放
+2. **作为可选 backend**:`SessionPool` 扩展 `backend="openap" | "jsbsim"` 双模
+3. **完全替代**:❌ 不推荐,6-DoF 仿真是本项目差异化能力
+
 > **END of document** — last edited 2026-07-11

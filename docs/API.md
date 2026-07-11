@@ -192,3 +192,24 @@ Workflow guide: pull 8° nose-up → watch alpha → recover.
 versions without breaking changes. Removal happens only in major.
 
 JBSIM CORE API is JSBSim v1.3.1 (LGPL-2.1).
+
+---
+
+## Related Projects · OpenAP (out of scope)
+
+`jsbsim-mcp` covers **6-DoF high-fidelity simulation**. For
+**BADA-style macroscopic trajectories**, **ICAO emissions**, or **batch
+fleet simulation** (e.g. air-traffic research), see:
+
+- **OpenAP**: <https://github.com/TUDelft-CNS-ATM/openap> (LGPL-3.0)
+- Docs: <https://openap.dev/>
+- Install: `pip install openap`
+
+Adding OpenAP support is a **future option** (out of v0.1.0 scope). If
+you need `plan_trajectory(aircraft, origin, dest, alt)` for BADA-style
+macroscopic profiles, please open an issue and we will integrate as
+additive MCP tools without disturbing the JSBSim path.
+
+The two libraries are **complementary**, not competitive — JSBSim v1.3.1
+has 60 aircraft XML with full stall/trim envelopes (high fidelity),
+while OpenAP has ICAO emissions + waypoints (high coverage).
